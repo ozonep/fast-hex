@@ -17,7 +17,7 @@
           "<!(node -e \"require('nan')\")"
       ],
       "cflags":[
-        "-O3"
+        "-O3",
         "-march=native"
       ],
       "conditions": [
