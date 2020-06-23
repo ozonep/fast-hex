@@ -18,6 +18,7 @@
       ],
       "cflags":[
         "-O3",
+        "-Wnarrowing",
         "-march=native"
       ],
       "conditions": [
