@@ -37,7 +37,7 @@ bool bytesFromString(Local<Value> val, const uint8_t** data, size_t* length) {
     //std::cout << "internal one byte" << std::endl;
     *length = str->Length();
     *data = (const uint8_t*)_mm_malloc(*length, 64);
-    str->WriteOneByte(Nan::GetCurrentContext()->GetIsolate(), const_cast<uint8_t*>(*data));
+    str->WriteOneByte(const_cast<uint8_t*>(*data));
     return true;
   } else {
     std::cout << "external 2-byte string encountered" << std::endl;
@@ -87,7 +87,7 @@ NAN_METHOD(decodeHex) {
 template <int METHOD>
 NAN_METHOD(encodeHex) {
   EscapableHandleScope scope(Isolate::GetCurrent());
-  
+
   Local<Uint8Array> srcTa = info[0].As<Uint8Array>();
   Nan::TypedArrayContents<uint8_t> src(srcTa);
   size_t srcLen = srcTa->Length();
@@ -124,8 +124,6 @@ NAN_METHOD(encodeHex) {
 #endif
 
   _mm_free(dst);
-
-  // TODO use external strings above apex
 
   info.GetReturnValue().Set(scope.Escape(str));
 }

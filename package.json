@@ -1,6 +1,6 @@
 {
   "name": "ozonep-fast-hex",
-  "version": "1.0.4",
+  "version": "1.0.9",
   "description": "Hardware-accelerated string decoding",
   "main": "./build/Release/strdecode.node",
   "author": "zbjornson",
