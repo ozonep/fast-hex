@@ -6,7 +6,8 @@
   "author": "zbjornson",
   "license": "MIT",
   "dependencies": {
-    "nan": "^2.14.1"
+    "node-addon-api": "3.0.0",
+    "node-addon-api": "^3.0.0"
   },
   "scripts": {
     "install": "node-gyp rebuild || exit 0",
