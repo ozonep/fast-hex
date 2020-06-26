@@ -1,13 +1,12 @@
 {
   "name": "ozonep-fast-hex",
-  "version": "1.0.9",
+  "version": "1.0.20",
   "description": "Hardware-accelerated string decoding",
   "main": "./build/Release/strdecode.node",
   "author": "zbjornson",
   "license": "MIT",
   "dependencies": {
-    "node-addon-api": "3.0.0",
-    "node-addon-api": "^3.0.0"
+    "nan": "^2.14.1"
   },
   "scripts": {
     "install": "node-gyp rebuild || exit 0",

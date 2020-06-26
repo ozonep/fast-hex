@@ -1,13 +1,20 @@
-#include <napi.h>
-#include <uv.h>
+#if defined(__GNUC__) && __GNUC__ >= 8
+#define DISABLE_WCAST_FUNCTION_TYPE _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wcast-function-type\"")
+#define DISABLE_WCAST_FUNCTION_TYPE_END _Pragma("GCC diagnostic pop")
+#else
+#define DISABLE_WCAST_FUNCTION_TYPE
+#define DISABLE_WCAST_FUNCTION_TYPE_END
+#endif
+
+DISABLE_WCAST_FUNCTION_TYPE
+#include <nan.h>
+DISABLE_WCAST_FUNCTION_TYPE_END
 #include <stdint.h>
 #include <iostream>
 #include "hex.h"
 
 #if defined(__GNUC__) // GCC, clang
 #include <x86intrin.h> // _mm_malloc
-#elif defined(_MSC_VER)
-#include <intrin.h>
 #endif
 
 #ifdef PROFILE_
@@ -15,20 +22,19 @@
 #include <time.h>
 #endif
 
-using namespace Napi;
+using namespace v8;
 
 // Returns true if data was allocated and should be freed (with _mm_free)
-bool bytesFromString(Napi::Value val, const uint8_t** data, size_t* length) {
-  Napi::Env env = val.Env();
-  if (val.IsBuffer()) {
-    *data = reinterpret_cast<uint8_t*>(val.As<Napi::Buffer<char>>().Data());
-    *length = val.As<Napi::Buffer<char>>().Length();
+bool bytesFromString(Local<Value> val, const uint8_t** data, size_t* length) {
+  if (node::Buffer::HasInstance(val)) {
+    *data = reinterpret_cast<uint8_t*>(node::Buffer::Data(val));
+    *length = node::Buffer::Length(val);
     return false;
   }
 
-  if (!val.IsString()) return false;
+  if (!val->IsString()) return false;
 
-  Napi::String str = val.As<Napi::String>();
+  Local<String> str = val.As<String>();
   if (str->IsExternalOneByte()) {
     //std::cout << "external one byte" << std::endl;
     const String::ExternalOneByteStringResource* ext = str->GetExternalOneByteStringResource();
@@ -39,7 +45,7 @@ bool bytesFromString(Napi::Value val, const uint8_t** data, size_t* length) {
     //std::cout << "internal one byte" << std::endl;
     *length = str->Length();
     *data = (const uint8_t*)_mm_malloc(*length, 64);
-    str->WriteOneByte(const_cast<uint8_t*>(*data));
+    str->WriteOneByte(Nan::GetCurrentContext()->GetIsolate(), const_cast<uint8_t*>(*data));
     return true;
   } else {
     std::cout << "external 2-byte string encountered" << std::endl;
@@ -48,7 +54,7 @@ bool bytesFromString(Napi::Value val, const uint8_t** data, size_t* length) {
 }
 
 template <int METHOD>
-Napi::Value decodeHex(const Napi::CallbackInfo& info) {
+NAN_METHOD(decodeHex) {
 #ifdef PROFILE_
   std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
   std::chrono::nanoseconds time_span;
@@ -61,7 +67,7 @@ Napi::Value decodeHex(const Napi::CallbackInfo& info) {
 
   Local<Uint8Array> destTa = info[0].As<Uint8Array>();
   size_t outLen = inLen >> 1;
-  Napi::TypedArrayContents<uint8_t> decoded(destTa);
+  Nan::TypedArrayContents<uint8_t> decoded(destTa);
 
 
 #ifdef PROFILE_
@@ -82,16 +88,16 @@ Napi::Value decodeHex(const Napi::CallbackInfo& info) {
 #endif
 
   if (needsFree) _mm_free((void*)value);
-  //Local<v8::Object> buf = Napi::Buffer<char>::New(env, decoded, bufLength);
-  //return buf;
+  //Local<v8::Object> buf = Nan::NewBuffer(decoded, bufLength).ToLocalChecked();
+  //info.GetReturnValue().Set(buf);
 }
 
 template <int METHOD>
-Napi::Value encodeHex(const Napi::CallbackInfo& info) {
+NAN_METHOD(encodeHex) {
   EscapableHandleScope scope(Isolate::GetCurrent());
 
   Local<Uint8Array> srcTa = info[0].As<Uint8Array>();
-  Napi::TypedArrayContents<uint8_t> src(srcTa);
+  Nan::TypedArrayContents<uint8_t> src(srcTa);
   size_t srcLen = srcTa->Length();
 
   size_t destLen = srcLen << 1;
@@ -113,11 +119,11 @@ Napi::Value encodeHex(const Napi::CallbackInfo& info) {
   start = std::chrono::high_resolution_clock::now();
 #endif
 
-  Napi::String str = v8::String::NewFromOneByte(
+  Local<String> str = v8::String::NewFromOneByte(
     Isolate::GetCurrent(),
     dst,
     v8::NewStringType::kNormal,
-    destLen);
+    destLen).ToLocalChecked();
 
 #ifdef PROFILE_
   end = std::chrono::high_resolution_clock::now();
@@ -127,21 +133,23 @@ Napi::Value encodeHex(const Napi::CallbackInfo& info) {
 
   _mm_free(dst);
 
-  return scope.Escape(str);
+  info.GetReturnValue().Set(scope.Escape(str));
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  (target).Set(Napi::String::New(env, "decodeHexNode"),
-    Napi::GetFunction(Napi::Napi::FunctionReference::New(env, decodeHex<0>)));
-  (target).Set(Napi::String::New(env, "decodeHexNode2"),
-    Napi::GetFunction(Napi::Napi::FunctionReference::New(env, decodeHex<1>)));
-  (target).Set(Napi::String::New(env, "decodeHexVec"),
-    Napi::GetFunction(Napi::Napi::FunctionReference::New(env, decodeHex<2>)));
+NAN_MODULE_INIT(Init) {
+  Nan::Set(target, Nan::New("decodeHexNode").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(decodeHex<0>)).ToLocalChecked());
+  Nan::Set(target, Nan::New("decodeHexNode2").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(decodeHex<1>)).ToLocalChecked());
+  Nan::Set(target, Nan::New("decodeHexVec").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(decodeHex<2>)).ToLocalChecked());
 
-  (target).Set(Napi::String::New(env, "encodeHex"),
-    Napi::GetFunction(Napi::Napi::FunctionReference::New(env, encodeHex<0>)));
-  (target).Set(Napi::String::New(env, "encodeHexVec"),
-    Napi::GetFunction(Napi::Napi::FunctionReference::New(env, encodeHex<1>)));
+  Nan::Set(target, Nan::New("encodeHex").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(encodeHex<0>)).ToLocalChecked());
+  Nan::Set(target, Nan::New("encodeHexVec").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(encodeHex<1>)).ToLocalChecked());
 }
 
-NODE_API_MODULE(strdecode, Init);
+DISABLE_WCAST_FUNCTION_TYPE
+NODE_MODULE(strdecode, Init);
+DISABLE_WCAST_FUNCTION_TYPE_END
