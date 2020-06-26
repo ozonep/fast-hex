@@ -11,11 +11,13 @@
       ],
       "cflags":[
         "-O3",
+        "-Wno-cast-function-type"
         "-Wno-narrowing",
         "-march=native"
       ],
       "cflags_cc":[
         "-O3",
+        "-Wno-cast-function-type",
         "-Wno-narrowing",
         "-march=native"
       ]
