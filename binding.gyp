@@ -11,10 +11,12 @@
       ],
       "cflags":[
         "-O3",
+        "-Wno-cast-function-type",
         "-march=haswell"
       ],
       "cflags_cc":[
         "-O3",
+        "-Wno-cast-function-type",
         "-march=haswell"
       ]
     }
