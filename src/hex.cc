@@ -1,10 +1,6 @@
 #include "hex.h"
 
-
 #include <immintrin.h>
-#elif defined(_MSC_VER)
-#include <intrin.h>
-#endif
 
 
 static inline int8_t unhexBitManip(uint8_t x) {

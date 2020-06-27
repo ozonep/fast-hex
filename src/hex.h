@@ -3,9 +3,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if defined(_MSC_VER)
-#define __restrict__ __restrict  // The C99 keyword, available as a C++ extension
-#endif
 
 // Decoders
 // Decode src hex string into dest bytes
