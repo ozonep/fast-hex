@@ -1,6 +1,6 @@
 # Fast Hex
 
-A fast, SIMD (vectorized) hex string encoder/decoder, available as a stand-alone
+A fast, SIMD (vectorized) hex string decoder, available as a stand-alone
 C++ module and as a Node.js module.
 
 * Supports upper-case and lower-case characters.
@@ -10,45 +10,18 @@ C++ module and as a Node.js module.
 I think these implementations are close to optimal, but PRs are welcome for
 optimizations.
 
----
 
-## C++
-
-Pull in `src/hex.h` and `src/hex.cc`, and adjust your build appropriately
-(GCC/Clang/ICC: `-march=haswell` for example; MSVC: set
-`EnableAdvancedInstructionSet` to "AVX2" or `/arch:AVX2`).
-
-See `hex.h` for the exported functions. There are three decoder implementations
-and two encoder implementations, with the same signature:
-
-```cpp
-// Decodes src hex string into dest bytes.
-// len is number of dest bytes (1/2 the size of src).
-void decodeHex___(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len);
-
-// Encodes src bytes into dest hex string.
-// len is number of src bytes (dest must be twice the size of src).
-void encodeHex___(uint8_t* __restrict__ dest, const uint8_t* __restrict__ src, size_t len);
-```
-
-**Benchmark**
-* Decoding ~12.5x over scalar.
-* Encoding ~11.5x over scalar.
-
----
 
 ## Node.js
 
 ```typescript
-const {decodeHexVec, encodeHexVec} = require("fast-hex");
+const {decodeHexVec} = require("fast-hex");
 decodeHexVec(output: Uint8Array|Buffer, input: Uint8Array|Buffer): void;
-encodeHexVec(input: Uint8Array|Buffer): string;
 ```
 
 **Benchmark**
 * ~2.12x faster decoding for short string inputs (< 1,031,913 chars).
 * ~12x faster decoding for some long strings, Buffers and TypedArrays.
-* ~5.5x faster encoding.
 
 Development notes:
 * Accessing string bytes from v8 is slow. Node uses external strings in some
