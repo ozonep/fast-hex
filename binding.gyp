@@ -10,12 +10,12 @@
           "<!(node -e \"require('nan')\")"
       ],
       "cflags":[
-        "-O3",
+        "-Ofast",
         "-Wno-cast-function-type",
         "-march=haswell"
       ],
       "cflags_cc":[
-        "-O3",
+        "-Ofast",
         "-Wno-cast-function-type",
         "-march=haswell"
       ]
